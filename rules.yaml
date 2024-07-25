@@ -1,0 +1,53 @@
+rules:
+  # takhle lze jednoduše si vypsat co přesně za object jsme si do proměnné předali. Nelze vypisovat komplexní typy jako je objekt, pole, buffer atd...
+  - let:
+      values: "sheets.0.data.0.rowData.0.values"
+    condition: |
+      JSON.stringify(Object.entries(values))
+
+  # Můžeme používat metody a vlastnosti předaného pole
+  - let:
+      values: "sheets.0.data.0.rowData.0.values"
+    condition: |
+      values.length
+
+  # Nejjednodušší práce s polem je pomocí metod iterujících nad itemy a vracející boolean (some, every). Some vrátí true, pokud se předaná podmínka splní.
+  - let:
+      values: "sheets.0.data.0.rowData.0.values"
+    condition: |
+      !values.some(value => value.effectiveValue.numberValue != 1)
+
+  # Lze použít i every. To je v podstatě opak some. Vrátí true pouze pokud se podmínka splní u všech itemů pole.
+  - let:
+      values: "sheets.0.data.0.rowData.0.values"
+    condition: |
+      values.every(value => value.effectiveValue.numberValue == 1)
+
+  # Lze kombinovat i s dalšími metodami. Například map, která transformuje všechny itemy. Zde nám vrátí rovnou pole numberedValues tak, abychom v metodě every už pracovali pouze s číselnou hodnotou v buňce tabulky.
+  - let:
+      values: "sheets.0.data.0.rowData.0.values"
+    condition: |
+      values.map(value => value.effectiveValue.numberValue).every(value => value == 1)
+
+  # Do metod every, some i map můžeme předávat i funkci (složené závorky). Nesmíme pak ale zaomenout na return statement.
+  - let:
+      values: "sheets.0.data.0.rowData.0.values"
+    condition: |
+      values.map(value => value.effectiveValue.numberValue).every(value => {
+        if(value == 1) {
+          return true
+        }
+        return false
+      })
+
+  # Pokud chceme pracovat nějakým způsobem předpřipravit v proměnné výsledek podmínky například pomocí vytvoření pole, které pak nějak zpracujeme a chceme tudíž,
+  # abychom tento výsledek "vyhodili" pomocí statementu return, tak musíme vytvořit funkci, kterou rovnou zavoláme. Zkráceně takto: (() => { /náš kód s return statementem/ })()
+  - let:
+      values: "sheets.0.data.0.rowData.0.values"
+    condition: |
+      (() => {
+        for (let value of values) {
+          if(value.effectiveValue.numberValue != 1) return false
+        }
+        return true
+      })()
